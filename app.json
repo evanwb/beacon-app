@@ -15,16 +15,44 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.iridium.beacon"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.iridium.beacon"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-contacts",
+        {
+          "contactsPermission": "Allow $(PRODUCT_NAME) to access your contacts."
+        }
+      ],
+      [
+        "react-native-wifi-reborn",
+        {
+          "fineLocationPermission": false
+        }
+      ],[
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location."
+        }
+      
+    ]
+
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "54ab47f9-cd15-4418-b6de-964f725596c6"
+      }
     }
   }
 }
