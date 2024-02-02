@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { sendMessage } from "./util";
+import { sendMessage, sendToBeacon } from "./util";
 import {
   View,
   TextInput,
@@ -8,22 +8,28 @@ import {
   Touchable,
   TouchableOpacity,
   Text,
+  ScrollView,
 } from "react-native";
-import * as Contacts from "expo-contacts";
+// import * as Contacts from "expo-contacts";
 import WifiManager from "react-native-wifi-reborn";
 import { PermissionsAndroid } from "react-native";
 import * as Location from "expo-location";
+import { Contact, getAll } from "react-native-contacts";
 
 const Send = ({ navigation, route }) => {
   console.log(route);
   const [name, setName] = useState<string>("");
   const [beacon, setBeacon] = useState<string>(route.params?.beacon ?? "");
   const [phone, setPhone] = useState<string>("");
-  const [recipient, setRecipient] = useState<string>("");
+  const [recipient, setRecipient] = useState<{
+    name: string;
+    number: string;
+  }>();
   const [message, setMessage] = useState<string>(route.params?.msg ?? "");
-  const [contacts, setContacts] = useState<any>([]);
+  const [contacts, setContacts] = useState<Contacts.Contact[]>([]);
+  const [filtered, setFilteredContacts] = useState<Contacts.Contact[]>([]);
   const [selected, setSelectedItem] = useState<any>();
-  const [wifiStrength, setWifiStrength] = useState<any>(null);
+  const [showContacts, setShowContacts] = useState(false);
 
   const handleInputChange = async (inputNumber: number, text: string) => {
     switch (inputNumber) {
@@ -34,6 +40,11 @@ const Send = ({ navigation, route }) => {
         setPhone(text);
         break;
       case 3:
+        setFilteredContacts(
+          contacts.filter((c) =>
+            text.length == 0 ? true : c.name.includes(text)
+          )
+        );
         setRecipient(text);
         break;
       case 4:
@@ -61,27 +72,21 @@ const Send = ({ navigation, route }) => {
 
       //console.warn(await NativeModules.RNCNetInfo.getCurrentState("wifi"));
       //setBeacon(route.params.beacon ?? beacon);
+      const cnts = await getAll();
+      const data = cnts.map((c: Contact) => ({
+        name: c.givenName + " " + c.familyName,
+        number: c.phoneNumbers[0].number,
+      }));
+      setContacts(data);
+      console.log(data);
+      setFilteredContacts(data);
+      let i = 0;
 
-      const { status } = await Contacts.requestPermissionsAsync();
-      if (status === "granted") {
-        const { data } = await Contacts.getContactsAsync({
-          fields: [Contacts.Fields.PhoneNumbers, Contacts.Fields.Name],
-        });
-        let i = 0;
-        let cnts = [];
-        data.forEach((c) => {
-          // console.log(c);
-          cnts.push({ id: i, name: c.name });
-
-          i++;
-        });
-        setContacts(cnts);
-        // console.log(contacts.length);
-        // if (data.length > 0) {
-        //   const contact = data[0];
-        //   console.log(contact);
-        // }
-      }
+      // console.log(contacts.length);
+      // if (data.length > 0) {
+      //   const contact = data[0];
+      //   console.log(contact);
+      // }
     })();
   }, []);
 
@@ -106,7 +111,9 @@ const Send = ({ navigation, route }) => {
           placeholder="Full Name"
           value={name}
           onChangeText={(text) => handleInputChange(1, text)}
+          onFocus={(e) => setShowContacts(false)}
         />
+
         {/* <TextInput
           style={styles.input}
           placeholder="Your Phone Number (Optional)"
@@ -116,14 +123,43 @@ const Send = ({ navigation, route }) => {
         <TextInput
           style={styles.input}
           placeholder="Recipient Phone Number"
-          value={recipient}
+          value={recipient?.name}
           onChangeText={(text) => handleInputChange(3, text)}
+          onFocus={(e) => setShowContacts(false)}
         />
+        <>
+          {showContacts ? (
+            <ScrollView>
+              {filtered.map((c, idx) => {
+                console.log(c);
+                return (
+                  <TouchableOpacity
+                    style={{
+                      borderWidth: 0.5,
+                      paddingHorizontal: 100,
+                      paddingVertical: 10,
+                      borderRadius: 20,
+                      margin: 5,
+                      textAlign: "left",
+                    }}
+                    key={idx}
+                    onPress={() => setRecipient(c)}
+                  >
+                    <Text style={{ fontSize: 16 }}>{c.name}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          ) : (
+            <View></View>
+          )}
+        </>
         <TextInput
           style={styles.input}
           placeholder="Beacon ID (Optional)"
           value={beacon}
           onChangeText={(text) => handleInputChange(4, text)}
+          onFocus={(e) => setShowContacts(false)}
         />
         {/* <SearchableDropdown
             onTextChange={(text) => console.log(text)}
@@ -156,6 +192,7 @@ const Send = ({ navigation, route }) => {
           placeholder="Message to send"
           value={message}
           onChangeText={(text) => handleInputChange(5, text)}
+          onFocus={(e) => setShowContacts(false)}
         />
         <TouchableOpacity
           onPress={async () => {
@@ -163,7 +200,11 @@ const Send = ({ navigation, route }) => {
             else if (recipient === "" && beacon === "")
               alert("Please enter recipient number or beacon id");
             else if (message === "") alert("Please enter a message to send");
-            else await sendMessage(name, phone, recipient, message);
+            else {
+              if (beacon === "")
+                await sendMessage(name, recipient!.name, message);
+              else await sendToBeacon(name, beacon, message);
+            }
           }}
           style={{
             backgroundColor: "gray",

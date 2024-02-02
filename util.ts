@@ -12,10 +12,13 @@ const fetchDataWithTimeout = (
     ),
   ]);
 };
-
+export const sendToBeacon = async (
+  name: string,
+  beacon: string,
+  message: string
+) => {};
 export const sendMessage = async (
   name: string,
-  phone: string,
   recipient: string,
   message: string
 ) => {
@@ -66,17 +69,21 @@ export const getBeaconInfo = async (): Promise<BeaconInfo> => {
   return r;
 };
 
-const randomMarker = (id: number): MarkerInfo => {
-  const randomLatitude = Math.random() * (36.5881 - 33.7529) + 33.7529; // Random latitude between 33.7529 and 36.5881 (bounds for NC)
-  const randomLongitude = Math.random() * (-75.809 - -84.3196) - 84.3196; // Random longitude between -84.3196 and -75.8090 (bounds for NC)
+const randomMarker = (id: number, { lat, lon }): MarkerInfo => {
+  const latOffset = (Math.random() - 0.5) * 0.1; // Adjust the multiplier for desired range
+  const lonOffset = (Math.random() - 0.5) * 0.1; // Adjust the multiplier for desired range
+
+  // Applying the offsets to the provided coordinates
+  const randomLat = lat + latOffset;
+  const randomLon = lon + lonOffset;
   const randomTitle = `Beacon ${id}`;
   const randomDesc = `Beacon ${id}`;
 
   const markerInfo = {
     title: randomTitle,
     coord: {
-      latitude: randomLatitude,
-      longitude: randomLongitude,
+      latitude: randomLat,
+      longitude: randomLon,
     },
     desc: undefined, //randomDesc,
     rssi: -32,
@@ -85,7 +92,13 @@ const randomMarker = (id: number): MarkerInfo => {
   return markerInfo;
 };
 
-export function generateRandomBeaconInfo(): Promise<BeaconInfo> {
+export function generateRandomBeaconInfo({
+  lat,
+  lon,
+}: {
+  lat: number;
+  lon: number;
+}): Promise<BeaconInfo> {
   return new Promise((resolve) => {
     const randomId = Math.floor(Math.random() * 10); // Replace 1000 with your desired range for id
     const randomAvailable = Array.from({ length: 6 }, () => {
@@ -94,7 +107,7 @@ export function generateRandomBeaconInfo(): Promise<BeaconInfo> {
 
     let markers: MarkerInfo[] = [];
     randomAvailable.forEach((v, id) => {
-      if (v > 0) markers.push(randomMarker(id));
+      if (v > 0) markers.push(randomMarker(id, { lat, lon }));
     });
 
     const beaconInfo = {
@@ -114,8 +127,6 @@ export type MarkerInfo = {
     longitude: number;
   };
   desc: string | undefined;
-  rssi: number;
-  snr: number;
 };
 
 export type MessageInfo = {
