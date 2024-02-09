@@ -1,11 +1,25 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { generateRandomBeaconInfo, BeaconInfo, MarkerInfo } from "./util";
+import React, { useCallback, useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Alert,
+  Button,
+  RefreshControl,
+  ScrollView,
+} from "react-native";
+import {
+  generateRandomBeaconInfo,
+  BeaconInfo,
+  MarkerInfo,
+  getBeaconInfo,
+  scan,
+} from "./util";
 import MapView, { Details, Marker, Region } from "react-native-maps";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import * as Location from "expo-location";
 
-const Beacon = () => {
+const Beacon = ({ navigation }) => {
   const [id, setId] = useState("");
   const [avail, setAvail] = useState<number[]>([]);
   const [markers, setMarkers] = useState<MarkerInfo[]>([]);
@@ -16,9 +30,31 @@ const Beacon = () => {
     latDelta: 0,
     lonDelta: 0,
   });
+  const [refreshing, setRefreshing] = useState(false);
 
+  const onRefresh = useCallback(async () => {
+    // Set refreshing to true to show the refresh indicator
+    setRefreshing(true);
+    await getData();
+    setRefreshing(false);
+  }, []);
+  const getData = async () => {
+    const res = await getBeaconInfo(); //await generateRandomBeaconInfo({
+    //   lat: lat,
+    //   lon: lon,
+    // });
+    if (!res) {
+      setId("?");
+      return;
+    }
+    //Alert.alert("Beacon Info", res.available);
+    setId(`${res.id}`);
+    //res.available[res.id] = '1';
+    setAvail(res.available.split("").map((a) => (a === "1" ? 1 : 0)));
+  };
   useEffect(() => {
     (async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
       const c = await Location.getLastKnownPositionAsync();
       const lat = c?.coords.latitude ?? 0;
       const lon = c?.coords.longitude ?? 0;
@@ -34,17 +70,22 @@ const Beacon = () => {
           title: "You",
         },
       ]);
-      const res = await generateRandomBeaconInfo({
-        lat: lat,
-        lon: lon,
+
+      ms.push({
+        coord: {
+          latitude: lat,
+          longitude: lon,
+        },
+        desc: "",
+        title: "You",
       });
-      setId(`${res.id}`);
-      res.available[res.id] = 1;
-      setAvail(res.available);
-      setMarkers((m) => {
-        ms = [...m, ...res.markers];
-        return [...m, ...res.markers];
-      });
+
+      await getData();
+
+      // setMarkers((m) => {
+      //   ms = [...m, ...res.markers];
+      //   return [...m, ...res.markers];
+      // });
 
       const findMinMaxLatLon = (markerList: MarkerInfo[]) => {
         if (markerList.length === 0) {
@@ -71,7 +112,6 @@ const Beacon = () => {
           maxLon = Math.max(maxLon, longitude);
         }
 
-        console.log(minLat, maxLat, minLon, maxLon);
         return {
           minLat,
           latDelta: 3 * Math.abs(minLat - maxLat),
@@ -84,7 +124,16 @@ const Beacon = () => {
     })();
   }, []);
   return (
-    <View style={styles.container}>
+    <ScrollView
+      contentContainerStyle={styles.container}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          colors={["gray"]} // Android colors for the refresh indicator
+        />
+      }
+    >
       <View
         style={{
           flexDirection: "row",
@@ -94,54 +143,89 @@ const Beacon = () => {
         }}
       >
         <Text style={styles.topText}>Beacon ID: {id}</Text>
-        <Text style={styles.topText}>Battery: 96%</Text>
+        <Button title="Scan" onPress={async () => console.log(await scan())} />
+        {/* <Text style={styles.topText}>Battery: 96%</Text> */}
       </View>
 
       <Text style={styles.centeredText}>Available Beacons</Text>
       <View>
-        {avail.map((up, idx) => {
-          return (
-            <View
-              key={idx}
-              style={{ flexDirection: "row", alignItems: "center" }}
-            >
-              <Ionicons
-                name={up > 0 ? "wifi" : "wifi-outline"}
-                size={20}
-                color={up > 0 ? "blue" : "black"}
-              />
-              <Text style={{}}>{`Beacon ${idx} is ${
-                up > 0 ? `available` : "not available"
-              } `}</Text>
-            </View>
-          );
-        })}
+        {avail.length == 0 ? (
+          <View>
+            <Text>No available beacons, are you connected?</Text>
+            <Button title="Reload" onPress={getData} />
+          </View>
+        ) : (
+          avail.map((up, idx) => {
+            return (
+              <View
+                key={idx}
+                style={{ flexDirection: "row", alignItems: "center" }}
+              >
+                <Ionicons
+                  name={up > 0 ? "wifi" : "wifi-outline"}
+                  size={20}
+                  color={up > 0 ? "blue" : "black"}
+                />
+                <Text style={{}}>{`Beacon ${idx} is ${
+                  up > 0
+                    ? id === `${idx}`
+                      ? "you"
+                      : `available`
+                    : "not available"
+                } `}</Text>
+              </View>
+            );
+          })
+        )}
       </View>
       <View style={{ padding: 10 }} />
-      <MapView
+      {/* <MapView
+        mapType="standard"
+        showsUserLocation
         style={styles.map}
         region={{
           latitude: area.minLat - 0.01,
-          longitude: area.minLon + 0.02,
+          longitude: area.minLon + 0.01,
           latitudeDelta: area.latDelta,
           longitudeDelta: area.lonDelta,
         }}
-        onRegionChange={(region: Region, details: Details) => {
-          console.log(region, area);
-        }}
-        reg
+        onRegionChange={(region: Region, details: Details) => {}}
       >
         {markers.map((marker, index) => (
           <Marker
-            pinColor="blue"
+            pinColor={marker.title == "You" ? "blue" : "red"}
             key={index}
             coordinate={marker.coord}
             title={marker.title}
             description={marker.desc}
+            isPreselected={0 === index}
+            onPress={() =>
+              marker.title == "You"
+                ? null
+                : Alert.alert(
+                    "Confirmation",
+                    `Do you want to message ${marker.title}?`,
+                    [
+                      {
+                        text: "Cancel",
+                        onPress: () => console.log("Cancel Pressed"),
+                        style: "cancel",
+                      },
+                      {
+                        text: "OK",
+                        onPress: () =>
+                          navigation.navigate("Send", {
+                            beacon: `${marker.title.split(" ")[1]}`,
+                          }),
+                      },
+                    ],
+                    { cancelable: false }
+                  )
+            }
           />
         ))}
-      </MapView>
-    </View>
+      </MapView> */}
+    </ScrollView>
   );
 };
 

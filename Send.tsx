@@ -9,15 +9,17 @@ import {
   TouchableOpacity,
   Text,
   ScrollView,
+  Alert,
 } from "react-native";
 // import * as Contacts from "expo-contacts";
 import WifiManager from "react-native-wifi-reborn";
 import { PermissionsAndroid } from "react-native";
 import * as Location from "expo-location";
-import { Contact, getAll } from "react-native-contacts";
+import { requestPermission, Contact, getAll } from "react-native-contacts";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const Send = ({ navigation, route }) => {
-  console.log(route);
+  console.log(route.params);
   const [name, setName] = useState<string>("");
   const [beacon, setBeacon] = useState<string>(route.params?.beacon ?? "");
   const [phone, setPhone] = useState<string>("");
@@ -25,6 +27,7 @@ const Send = ({ navigation, route }) => {
     name: string;
     number: string;
   }>();
+  const [recpName, setRecipientName] = useState<string>();
   const [message, setMessage] = useState<string>(route.params?.msg ?? "");
   const [contacts, setContacts] = useState<Contacts.Contact[]>([]);
   const [filtered, setFilteredContacts] = useState<Contacts.Contact[]>([]);
@@ -35,6 +38,7 @@ const Send = ({ navigation, route }) => {
     switch (inputNumber) {
       case 1:
         setName(text);
+        await AsyncStorage.setItem("name", text);
         break;
       case 2:
         setPhone(text);
@@ -42,16 +46,23 @@ const Send = ({ navigation, route }) => {
       case 3:
         setFilteredContacts(
           contacts.filter((c) =>
-            text.length == 0 ? true : c.name.includes(text)
+            c == undefined
+              ? false
+              : text.length == 0
+              ? true
+              : c.name.includes(text)
           )
         );
-        setRecipient(text);
+
+        setRecipientName(text);
         break;
       case 4:
         setBeacon(text);
+        //await AsyncStorage.setItem("beacon", text);
         break;
       case 5:
         setMessage(text);
+        await AsyncStorage.setItem("msg", text);
         break;
       default:
         break;
@@ -59,26 +70,49 @@ const Send = ({ navigation, route }) => {
   };
 
   const getStored = async () => {
-    // setName((await AsyncStorage.getItem("name")) ?? "");
+    setName((await AsyncStorage.getItem("name")) ?? "");
     // setPhone((await AsyncStorage.getItem("phone")) ?? "");
-    // setRecipient((await AsyncStorage.getItem("recp")) ?? "");
-    // setMessage((await AsyncStorage.getItem("msg")) ?? "");
+    //setBeacon((await AsyncStorage.getItem("beacon")) ?? "");
+    setMessage((await AsyncStorage.getItem("msg")) ?? "");
   };
-
+  const handleSend = async () => {
+    if (name === "") alert("Please enter your name");
+    else if ((recipient?.number ?? "") === "" && beacon === "")
+      alert("Please enter recipient number or beacon id");
+    else if (message === "") alert("Please enter a message to send");
+    else if (message.includes(",")) {
+      alert("Please dont use commas in message");
+      setMessage(message.replace(",", "."));
+    } else {
+      if (recipient?.number !== "")
+        await sendMessage(name, recipient!.number, message);
+      else await sendToBeacon(name, beacon, message);
+    }
+  };
   useEffect(() => {
     (async () => {
+      await requestPermission();
       await Location.requestForegroundPermissionsAsync();
       //const data = await WifiManager.connectToSSID("Beacon");
 
       //console.warn(await NativeModules.RNCNetInfo.getCurrentState("wifi"));
       //setBeacon(route.params.beacon ?? beacon);
       const cnts = await getAll();
-      const data = cnts.map((c: Contact) => ({
-        name: c.givenName + " " + c.familyName,
-        number: c.phoneNumbers[0].number,
-      }));
+      const data = [
+        ...cnts.map((c: Contact) => {
+          if (
+            (c.phoneNumbers[0]?.number ?? "") !== "" &&
+            ((c.givenName ?? "") !== "" || (c.familyName ?? "") !== "")
+          ) {
+            const d = {
+              name: c.givenName + " " + c.familyName,
+              number: c.phoneNumbers[0]?.number ?? "",
+            };
+            if (d !== undefined) return d;
+          }
+        }),
+      ].sort((a, b) => a.name.localeCompare(b.name));
       setContacts(data);
-      console.log(data);
       setFilteredContacts(data);
       let i = 0;
 
@@ -123,29 +157,57 @@ const Send = ({ navigation, route }) => {
         <TextInput
           style={styles.input}
           placeholder="Recipient Phone Number"
-          value={recipient?.name}
+          value={recpName}
+          //editable={beacon === ""}
           onChangeText={(text) => handleInputChange(3, text)}
-          onFocus={(e) => setShowContacts(false)}
+          onFocus={(e) => setShowContacts(true)}
         />
         <>
-          {showContacts ? (
-            <ScrollView>
+          {showContacts && filtered.length > 0 ? (
+            <ScrollView
+              style={{ width: "100%" }}
+              contentContainerStyle={{ alignItems: "center" }}
+            >
               {filtered.map((c, idx) => {
                 console.log(c);
                 return (
                   <TouchableOpacity
                     style={{
                       borderWidth: 0.5,
-                      paddingHorizontal: 100,
+                      // paddingHorizontal: 100,
                       paddingVertical: 10,
                       borderRadius: 20,
                       margin: 5,
                       textAlign: "left",
+                      width: "90%",
                     }}
                     key={idx}
-                    onPress={() => setRecipient(c)}
+                    onPress={() => {
+                      setRecipient(c);
+                      setRecipientName(c.name);
+                      setShowContacts(false);
+                    }}
                   >
-                    <Text style={{ fontSize: 16 }}>{c.name}</Text>
+                    <View
+                      style={{
+                        flex: 1,
+                        flexDirection: "row",
+                        width: "100%",
+                        alignItems: "flex-start",
+                        justifyContent: "flex-start",
+                        alignContent: "flex-start",
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 16,
+                          textAlign: "left",
+                          paddingHorizontal: 10,
+                        }}
+                      >
+                        {c?.name ?? ""}
+                      </Text>
+                    </View>
                   </TouchableOpacity>
                 );
               })}
@@ -156,6 +218,7 @@ const Send = ({ navigation, route }) => {
         </>
         <TextInput
           style={styles.input}
+          //editable={recpName == ""}
           placeholder="Beacon ID (Optional)"
           value={beacon}
           onChangeText={(text) => handleInputChange(4, text)}
@@ -194,35 +257,25 @@ const Send = ({ navigation, route }) => {
           onChangeText={(text) => handleInputChange(5, text)}
           onFocus={(e) => setShowContacts(false)}
         />
+        <TouchableOpacity onPress={handleSend} style={styles.button}>
+          <Text style={styles.buttonText}>Send</Text>
+        </TouchableOpacity>
         <TouchableOpacity
-          onPress={async () => {
-            if (name === "") alert("Please enter your name");
-            else if (recipient === "" && beacon === "")
-              alert("Please enter recipient number or beacon id");
-            else if (message === "") alert("Please enter a message to send");
-            else {
-              if (beacon === "")
-                await sendMessage(name, recipient!.name, message);
-              else await sendToBeacon(name, beacon, message);
-            }
+          onPress={() => {
+            Alert.alert(
+              "Sending to all",
+              "This could take a while, check recieved messages for responses",
+              [
+                {
+                  text: "OK",
+                  onPress: () => navigation.navigate("Recieve"),
+                },
+              ]
+            );
           }}
-          style={{
-            backgroundColor: "gray",
-            width: "90%",
-            paddingVertical: 20,
-            borderRadius: 25,
-          }}
+          style={styles.buttonOutline}
         >
-          <Text
-            style={{
-              textAlign: "center",
-              color: "white",
-              fontSize: 20,
-              fontWeight: "bold",
-            }}
-          >
-            Send
-          </Text>
+          <Text style={{ ...styles.buttonText }}>Send to all</Text>
         </TouchableOpacity>
       </View>
     </>
@@ -230,6 +283,27 @@ const Send = ({ navigation, route }) => {
 };
 
 const styles = StyleSheet.create({
+  button: {
+    backgroundColor: "gray",
+    width: "50%",
+    paddingVertical: 16,
+    borderRadius: 100,
+    margin: 10,
+  },
+  buttonOutline: {
+    borderColor: "red",
+    backgroundColor: "red",
+    width: "50%",
+    paddingVertical: 16,
+    borderRadius: 100,
+    margin: 10,
+  },
+  buttonText: {
+    textAlign: "center",
+    color: "white",
+    fontSize: 20,
+    fontWeight: "bold",
+  },
   container: {
     flex: 1,
     //justifyContent: "center",

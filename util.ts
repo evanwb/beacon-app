@@ -1,10 +1,11 @@
 const url = "http://192.168.4.1";
-import axios from "axios";
+import * as Location from "expo-location";
+import { Alert } from "react-native";
 
 const fetchDataWithTimeout = (
   url: string,
   timeout: number
-): Promise<Response> => {
+): Promise<Response | any> => {
   return Promise.race([
     fetch(url), // Actual fetch request
     new Promise((_, reject) =>
@@ -23,50 +24,69 @@ export const sendMessage = async (
   message: string
 ) => {
   try {
+    const { latitude, longitude } = (await Location.getCurrentPositionAsync())
+      .coords;
+    console.log(
+      `sending ${message} to ${recipient} location: ${latitude},${longitude}`
+    );
+
+    if (recipient.includes("(") || recipient.includes("+"))
+      recipient = recipient.replace(/^\+|\D/g, "");
+
     const res = await fetchDataWithTimeout(
-      `${url + "/msg?"}
-      ${new URLSearchParams({
-        from: name,
-        to: recipient,
-        message: message,
-      })}`,
+      `${
+        url +
+        "/msg?" +
+        new URLSearchParams({
+          from: name,
+          to: recipient,
+          message: message,
+          location: `${latitude ?? 0},${longitude ?? 0}`,
+        })
+      }`,
       3000
     );
     const data = await res.json();
     console.log(data);
   } catch (err) {
-    alert(err.message);
+    //Alert.alert(`${err}`, "Make sure you are connected to your beacon");
   }
-
-  //   const res = await axios
-  //     .post(n
-  //       url +
-  //         new URLSearchParams({
-  //           from: name,
-  //           to: recipient,
-  //           message: `Message from ${name}: ${message} `,
-  //         })
-  //     )
-  //     .then(function (response) {
-  //       console.log(response);
-  //     })
-  //     .catch(function (error) {
-  //       console.log(error);
-  //     });
 };
+
 export type BeaconInfo = {
   id: number;
-  available: number[];
-  markers: MarkerInfo[];
+  available: string;
+  //markers: MarkerInfo[];
 };
-export const getBeaconInfo = async (): Promise<BeaconInfo> => {
-  const res = await fetch(url + "/info");
-  const data = await res.json();
-  const r: BeaconInfo = {
-    id: parseInt(data.id, 10),
-    available: data.available.split(" ").map(Number),
-  };
-  return r;
+export const getBeaconInfo = async (): Promise<BeaconInfo | null> => {
+  console.log(`beacon info`);
+  try {
+    const res = await fetchDataWithTimeout(url + "/info?", 3000);
+    const data = (await res.json()).result;
+    const r: BeaconInfo = {
+      id: parseInt(data.id, 10),
+      available: data.a,
+    };
+    return r;
+  } catch (err) {
+    Alert.alert(`${err}`, "Make sure you are connected to your beacon");
+    return null;
+  }
+};
+
+export const getBeaconRecv = async (): Promise<RecvMessageInfo[]> => {
+  let r: RecvMessageInfo[] = [];
+
+  try {
+    const res: Response = await fetchDataWithTimeout(url + "/recv?", 3000);
+    const data = JSON.parse(await res.text());
+    //alert(JSON.stringify(data.result));
+
+    return data as RecvMessageInfo[];
+  } catch (err) {
+    Alert.alert(`${err}`, "Make sure you are connected to your beacon");
+    return [];
+  }
 };
 
 const randomMarker = (id: number, { lat, lon }): MarkerInfo => {
@@ -112,13 +132,26 @@ export function generateRandomBeaconInfo({
 
     const beaconInfo = {
       id: randomId,
-      available: randomAvailable,
-      markers: markers,
+      available: "randomAvailable",
+      // markers: markers,
     };
 
     resolve(beaconInfo);
   });
 }
+
+export const scan = async () => {
+  try {
+    const res = await fetchDataWithTimeout(url + "/scan?", 3000);
+    const data = (await res.json()).result;
+    return data;
+  } catch (err) {
+    Alert.alert(`${err}`, "Make sure you are connected to your beacon");
+    return {
+      result: err,
+    };
+  }
+};
 
 export type MarkerInfo = {
   title: string;
@@ -129,7 +162,7 @@ export type MarkerInfo = {
   desc: string | undefined;
 };
 
-export type MessageInfo = {
-  rssi: number;
-  snr: number;
+export type RecvMessageInfo = {
+  id: number;
+  msg: string;
 };

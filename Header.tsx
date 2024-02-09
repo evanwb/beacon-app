@@ -5,9 +5,9 @@ const Header = () => {
     <View
       style={{
         backgroundColor: "gray",
-        height: 140,
+        height: 100,
         width: "100%",
-        //justifyContent: "center",
+        justifyContent: "center",
         alignItems: "center",
         //marginBottom: 30,
       }}
@@ -15,7 +15,7 @@ const Header = () => {
       <Text
         style={{
           fontSize: 35,
-          marginTop: 70,
+          //marginTop: 70,
           fontWeight: "bold",
           color: "white",
         }}

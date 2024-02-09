@@ -6,6 +6,7 @@ import Beacon from "./Beacon";
 import Header from "./Header";
 import Recv from "./Recv";
 import { Text } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 const Tab = createBottomTabNavigator();
 
 export default function App() {
@@ -13,8 +14,11 @@ export default function App() {
     <NavigationContainer>
       <Tab.Navigator
         screenOptions={({ route }) => ({
-          header: () => <Header />,
-          unmountOnBlur: true,
+          header: () => (
+            <SafeAreaView edges={["top"]} style={{ backgroundColor: "gray" }}>
+              <Header />
+            </SafeAreaView>
+          ),
           tabBarLabel: ({ focused }) => {
             return (
               <Text style={{ fontSize: 10, color: focused ? "blue" : "gray" }}>
@@ -29,7 +33,7 @@ export default function App() {
               iconName = focused ? "arrow-up" : "arrow-up-outline";
             } else if (route.name === "Beacon") {
               iconName = focused ? "wifi" : "wifi-outline";
-            } else if (route.name === "Recieve") {
+            } else if (route.name === "Receive") {
               iconName = focused ? "arrow-down" : "arrow-down-outline";
             }
             return (
@@ -40,13 +44,20 @@ export default function App() {
               />
             );
           },
-          tabBarActiveTintColor: "tomato",
           tabBarInactiveTintColor: "gray",
         })}
       >
-        <Tab.Screen name="Beacon" component={Beacon} />
-        <Tab.Screen name="Send" component={Send} />
-        <Tab.Screen name="Recieve" component={Recv} />
+        <Tab.Screen
+          name="Beacon"
+          //options={{ unmountOnBlur: true }}
+          component={Beacon}
+        />
+        <Tab.Screen
+          name="Send"
+          //options={{ unmountOnBlur: true }}
+          component={Send}
+        />
+        <Tab.Screen name="Receive" component={Recv} />
 
         {/* <Tab.Screen name="Settings" component={SettingsScreen} /> */}
       </Tab.Navigator>
