@@ -61,15 +61,19 @@ export type BeaconInfo = {
 export const getBeaconInfo = async (): Promise<BeaconInfo | null> => {
   console.log(`beacon info`);
   try {
-    const res = await fetchDataWithTimeout(url + "/info?", 3000);
-    const data = (await res.json()).result;
+    const res = await fetchDataWithTimeout(url + "/info", 3000);
+    const text = await res.text();
+
+    const data = JSON.parse(text).result;
+
     const r: BeaconInfo = {
       id: parseInt(data.id, 10),
       available: data.a,
     };
     return r;
   } catch (err) {
-    Alert.alert(`${err}`, "Make sure you are connected to your beacon");
+    // Alert.alert(`${err}`, "Make sure you are connected to your beacon");
+    alert(`${err}`);
     return null;
   }
 };
@@ -79,8 +83,8 @@ export const getBeaconRecv = async (): Promise<RecvMessageInfo[]> => {
 
   try {
     const res: Response = await fetchDataWithTimeout(url + "/recv?", 3000);
-    const data = JSON.parse(await res.text());
-    //alert(JSON.stringify(data.result));
+    const text = await res.text();
+    const data = JSON.parse(text).result;
 
     return data as RecvMessageInfo[];
   } catch (err) {

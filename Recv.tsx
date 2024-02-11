@@ -34,16 +34,18 @@ const Recv = ({ navigation }) => {
           });
         }}
         style={{
-          margin: 10,
+          margin: 5,
           borderWidth: 1,
-          borderRadius: 30,
-          paddingHorizontal: 30,
+          borderRadius: 20,
+          paddingHorizontal: 20,
           width: "90%",
           paddingVertical: 20,
+          flexDirection: "row",
+          justifyContent: "space-between",
         }}
       >
-        <Text>From Beacon {id}</Text>
-        <Text>{msg}</Text>
+        <Text style={{ fontSize: 18 }}>{msg}</Text>
+        <Text style={{ fontSize: 14 }}>Beacon {id}</Text>
       </TouchableOpacity>
     );
   };
@@ -67,7 +69,7 @@ const Recv = ({ navigation }) => {
           </View>
         ) : (
           messages.map((msg, index) => (
-            <Msg key={index} id={msg.id} data={msg.data} />
+            <Msg key={index} id={msg.id} msg={msg.msg} />
           ))
         )}
       </ScrollView>
