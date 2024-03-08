@@ -17,9 +17,11 @@ import { PermissionsAndroid } from "react-native";
 import * as Location from "expo-location";
 import { requestPermission, Contact, getAll } from "react-native-contacts";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Header from "./Header";
+
+const MAX_MESSAGE_LEN = 200;
 
 const Send = ({ navigation, route }) => {
-  console.log(route.params);
   const [name, setName] = useState<string>("");
   const [beacon, setBeacon] = useState<string>(route.params?.beacon ?? "");
   const [phone, setPhone] = useState<string>("");
@@ -62,6 +64,7 @@ const Send = ({ navigation, route }) => {
         break;
       case 5:
         setMessage(text);
+
         await AsyncStorage.setItem("msg", text);
         break;
       default:
@@ -76,6 +79,7 @@ const Send = ({ navigation, route }) => {
     setMessage((await AsyncStorage.getItem("msg")) ?? "");
   };
   const handleSend = async () => {
+    if (message.length > MAX_MESSAGE_LEN) return;
     if (name === "") alert("Please enter your name");
     else if ((recipient?.number ?? "") === "" && beacon === "")
       alert("Please enter recipient number or beacon id");
@@ -84,9 +88,9 @@ const Send = ({ navigation, route }) => {
       alert("Please dont use commas in message");
       setMessage(message.replace(",", "."));
     } else {
-      if (recipient?.number !== "")
-        await sendMessage(name, recipient!.number, message);
-      else await sendToBeacon(name, beacon, message);
+      if (beacon === "") {
+        await sendMessage(name, recipient!.number, message.trim());
+      } else await sendToBeacon(name, beacon, message.trim());
     }
   };
   useEffect(() => {
@@ -129,17 +133,19 @@ const Send = ({ navigation, route }) => {
   }, []);
 
   return (
-    <>
-      <View style={styles.container}>
-        <Text
-          style={{
-            fontSize: 20,
-            marginHorizontal: 10,
-            marginVertical: 20,
-          }}
-        >
-          Enter your information below to send an SOS message
-        </Text>
+    <View style={{ backgroundColor: "white", flex: 1 }}>
+      <Header text="Send" />
+
+      <Text
+        style={{
+          fontSize: 20,
+          marginHorizontal: 10,
+          marginVertical: 20,
+        }}
+      >
+        Enter your information below to send an SOS message
+      </Text>
+      <ScrollView contentContainerStyle={styles.container}>
         <TextInput
           style={styles.input}
           placeholder="Full Name"
@@ -257,6 +263,9 @@ const Send = ({ navigation, route }) => {
           onChangeText={(text) => handleInputChange(5, text)}
           onFocus={(e) => setShowContacts(false)}
         />
+        <Text in style={{ textAlign: "left", width: "80%", opacity: "0.5" }}>
+          {MAX_MESSAGE_LEN - message.length} characters left
+        </Text>
         <TouchableOpacity onPress={handleSend} style={styles.button}>
           <Text style={styles.buttonText}>Send</Text>
         </TouchableOpacity>
@@ -268,7 +277,7 @@ const Send = ({ navigation, route }) => {
               [
                 {
                   text: "OK",
-                  onPress: () => navigation.navigate("Recieve"),
+                  onPress: () => navigation.navigate("Receive"),
                 },
               ]
             );
@@ -277,8 +286,8 @@ const Send = ({ navigation, route }) => {
         >
           <Text style={{ ...styles.buttonText }}>Send to all</Text>
         </TouchableOpacity>
-      </View>
-    </>
+      </ScrollView>
+    </View>
   );
 };
 

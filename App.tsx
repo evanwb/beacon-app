@@ -1,33 +1,42 @@
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
+
 import Ionicons from "react-native-vector-icons/Ionicons";
 import Send from "./Send";
 import Beacon from "./Beacon";
 import Header from "./Header";
 import Recv from "./Recv";
-import { Text } from "react-native";
+import { Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Platform, StatusBar } from "react-native";
+
+import * as Haptics from "expo-haptics";
+
 const Tab = createBottomTabNavigator();
+const MenuTab = createMaterialTopTabNavigator();
 
 export default function App() {
   return (
-    <NavigationContainer>
-      <Tab.Navigator
+    <NavigationContainer
+      onStateChange={(state) =>
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy)
+      }
+    >
+      <MenuTab.Navigator
+        tabBarPosition="bottom"
         screenOptions={({ route }) => ({
-          header: () => (
-            <SafeAreaView edges={["top"]} style={{ backgroundColor: "gray" }}>
-              <Header />
-            </SafeAreaView>
-          ),
           tabBarLabel: ({ focused }) => {
             return (
-              <Text style={{ fontSize: 10, color: focused ? "blue" : "gray" }}>
+              <Text
+                style={{ fontSize: 10, color: focused ? "gray" : "lightgray" }}
+              >
                 {route.name}
               </Text>
             );
           },
-
-          tabBarIcon: ({ focused, color, size }) => {
+          tabBarStyle: { marginBottom: 5 },
+          tabBarIcon: ({ focused, color }) => {
             let iconName = "";
             if (route.name === "Send") {
               iconName = focused ? "arrow-up" : "arrow-up-outline";
@@ -39,28 +48,33 @@ export default function App() {
             return (
               <Ionicons
                 name={iconName}
-                size={30}
-                color={focused ? "blue" : "gray"}
+                size={27}
+                color={focused ? "gray" : "lightgray"}
               />
             );
           },
+          tabBarIndicator: () => <View></View>,
           tabBarInactiveTintColor: "gray",
         })}
       >
         <Tab.Screen
           name="Beacon"
-          //options={{ unmountOnBlur: true }}
+          options={{ unmountOnBlur: true }}
           component={Beacon}
         />
         <Tab.Screen
           name="Send"
-          //options={{ unmountOnBlur: true }}
+          options={{ unmountOnBlur: true }}
           component={Send}
         />
-        <Tab.Screen name="Receive" component={Recv} />
+        <Tab.Screen
+          name="Receive"
+          component={Recv}
+          options={{ unmountOnBlur: true }}
+        />
 
         {/* <Tab.Screen name="Settings" component={SettingsScreen} /> */}
-      </Tab.Navigator>
+      </MenuTab.Navigator>
     </NavigationContainer>
   );
 }

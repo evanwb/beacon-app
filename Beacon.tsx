@@ -18,6 +18,7 @@ import {
 import MapView, { Details, Marker, Region } from "react-native-maps";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import * as Location from "expo-location";
+import Header from "./Header";
 
 const Beacon = ({ navigation }) => {
   const [id, setId] = useState("");
@@ -44,7 +45,7 @@ const Beacon = ({ navigation }) => {
     //   lon: lon,
     // });
     if (!res) {
-      setId("?");
+      setId("N/A");
       return;
     }
     //Alert.alert("Beacon Info", res.available);
@@ -124,16 +125,9 @@ const Beacon = ({ navigation }) => {
     })();
   }, []);
   return (
-    <ScrollView
-      contentContainerStyle={styles.container}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          colors={["gray"]} // Android colors for the refresh indicator
-        />
-      }
-    >
+    <View style={styles.container}>
+      <Header text="Beacon" />
+
       <View
         style={{
           flexDirection: "row",
@@ -143,7 +137,25 @@ const Beacon = ({ navigation }) => {
         }}
       >
         <Text style={styles.topText}>Beacon ID: {id}</Text>
-        <Button title="Scan" onPress={async () => console.log(await scan())} />
+        <View style={{ flexDirection: "row" }}>
+          <Button
+            color="gray"
+            title="Scan"
+            onPress={async () => {
+              console.log(await scan());
+              setTimeout(() => {
+                getData();
+              }, 3000);
+            }}
+          />
+          <Button
+            color="gray"
+            title="Reload"
+            onPress={async () => {
+              await getData();
+            }}
+          />
+        </View>
         {/* <Text style={styles.topText}>Battery: 96%</Text> */}
       </View>
 
@@ -152,30 +164,40 @@ const Beacon = ({ navigation }) => {
         {avail.length == 0 ? (
           <View>
             <Text>No available beacons, are you connected?</Text>
-            <Button title="Reload" onPress={getData} />
+            {/* <Button title="Reload" onPress={getData} /> */}
           </View>
         ) : (
-          avail.map((up, idx) => {
-            return (
-              <View
-                key={idx}
-                style={{ flexDirection: "row", alignItems: "center" }}
-              >
-                <Ionicons
-                  name={up > 0 ? "wifi" : "wifi-outline"}
-                  size={20}
-                  color={up > 0 ? "blue" : "black"}
-                />
-                <Text style={{}}>{`Beacon ${idx} is ${
-                  up > 0
-                    ? id === `${idx}`
-                      ? "you"
-                      : `available`
-                    : "not available"
-                } `}</Text>
-              </View>
-            );
-          })
+          <ScrollView
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={["gray"]} // Android colors for the refresh indicator
+              />
+            }
+          >
+            {avail.map((up, idx) => {
+              return (
+                <View
+                  key={idx}
+                  style={{ flexDirection: "row", alignItems: "center" }}
+                >
+                  <Ionicons
+                    name={up > 0 ? "wifi" : "wifi-outline"}
+                    size={20}
+                    color={up > 0 ? "blue" : "black"}
+                  />
+                  <Text style={{}}>{`Beacon ${idx} is ${
+                    up > 0
+                      ? id === `${idx}`
+                        ? "you"
+                        : `available`
+                      : "not available"
+                  } `}</Text>
+                </View>
+              );
+            })}
+          </ScrollView>
         )}
       </View>
       <View style={{ padding: 10 }} />
@@ -215,7 +237,7 @@ const Beacon = ({ navigation }) => {
                         text: "OK",
                         onPress: () =>
                           navigation.navigate("Send", {
-                            beacon: `${marker.title.split(" ")[1]}`,
+                        x    beacon: `${marker.title.split(" ")[1]}`,
                           }),
                       },
                     ],
@@ -225,7 +247,7 @@ const Beacon = ({ navigation }) => {
           />
         ))}
       </MapView> */}
-    </ScrollView>
+    </View>
   );
 };
 
@@ -235,6 +257,7 @@ const styles = StyleSheet.create({
     //justifyContent: "center",
     alignItems: "center",
     fontSize: 20,
+    backgroundColor: "white",
   },
   centeredText: {
     fontSize: 22,

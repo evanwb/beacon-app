@@ -17,7 +17,33 @@ export const sendToBeacon = async (
   name: string,
   beacon: string,
   message: string
-) => {};
+) => {
+  try {
+    const { latitude, longitude, accuracy } = (
+      await Location.getCurrentPositionAsync()
+    ).coords;
+    console.log(
+      `sending ${message} to beacon ${beacon} location: ${latitude},${longitude}`
+    );
+
+    const res = await fetchDataWithTimeout(
+      `${
+        url +
+        "/send?" +
+        new URLSearchParams({
+          beacon: beacon,
+          message: message, //`message from ${name}: ${message}`,
+          location: `${latitude ?? 0}|${longitude ?? 0}`,
+        })
+      }`,
+      3000
+    );
+    const data = await res.json();
+    console.log(data);
+  } catch (err) {
+    //Alert.alert(`${err}`, "Make sure you are connected to your beacon");
+  }
+};
 export const sendMessage = async (
   name: string,
   recipient: string,
@@ -36,12 +62,12 @@ export const sendMessage = async (
     const res = await fetchDataWithTimeout(
       `${
         url +
-        "/msg?" +
+        "/send?" +
         new URLSearchParams({
           from: name,
           to: recipient,
           message: message,
-          location: `${latitude ?? 0},${longitude ?? 0}`,
+          location: `${latitude ?? 0}|${longitude ?? 0}`,
         })
       }`,
       3000
@@ -84,6 +110,7 @@ export const getBeaconRecv = async (): Promise<RecvMessageInfo[]> => {
   try {
     const res: Response = await fetchDataWithTimeout(url + "/recv?", 3000);
     const text = await res.text();
+
     const data = JSON.parse(text).result;
 
     return data as RecvMessageInfo[];
@@ -146,9 +173,20 @@ export function generateRandomBeaconInfo({
 
 export const scan = async () => {
   try {
-    const res = await fetchDataWithTimeout(url + "/scan?", 3000);
-    const data = (await res.json()).result;
-    return data;
+    const res = await fetchDataWithTimeout(url + "/scan?", 3000); //onst data = (await res.json()).result;
+    return "scan started";
+  } catch (err) {
+    Alert.alert(`${err}`, "Make sure you are connected to your beacon");
+    return {
+      result: err,
+    };
+  }
+};
+
+export const clear = async () => {
+  try {
+    const res = await fetchDataWithTimeout(url + "/clear?", 3000); //onst data = (await res.json()).result;
+    return "cleared";
   } catch (err) {
     Alert.alert(`${err}`, "Make sure you are connected to your beacon");
     return {
@@ -169,4 +207,6 @@ export type MarkerInfo = {
 export type RecvMessageInfo = {
   id: number;
   msg: string;
+  snr: number;
+  rssi: number;
 };

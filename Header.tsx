@@ -1,14 +1,15 @@
 import { View, Text } from "react-native";
 
-const Header = () => {
+const Header = ({ text }) => {
   return (
     <View
       style={{
         backgroundColor: "gray",
-        height: 100,
+        height: 120,
         width: "100%",
-        justifyContent: "center",
+        justifyContent: "flex-end",
         alignItems: "center",
+        //flex: 1,
         //marginBottom: 30,
       }}
     >
@@ -18,9 +19,10 @@ const Header = () => {
           //marginTop: 70,
           fontWeight: "bold",
           color: "white",
+          marginBottom: 20,
         }}
       >
-        Iridium Beacon
+        {text}
       </Text>
     </View>
   );

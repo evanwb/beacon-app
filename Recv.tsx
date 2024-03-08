@@ -6,7 +6,8 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
-import { RecvMessageInfo, getBeaconRecv } from "./util";
+import { RecvMessageInfo, clear, getBeaconRecv } from "./util";
+import Header from "./Header";
 
 const Recv = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
@@ -24,15 +25,9 @@ const Recv = ({ navigation }) => {
       setMessages(await getBeaconRecv());
     })();
   }, []);
-  const Msg = ({ id, msg }) => {
+  const Msg = ({ m }) => {
     return (
-      <TouchableOpacity
-        onPress={() => {
-          navigation.navigate("Send", {
-            beacon: `${id}`,
-            msg: "Replying to: " + msg,
-          });
-        }}
+      <View
         style={{
           margin: 5,
           borderWidth: 1,
@@ -42,16 +37,62 @@ const Recv = ({ navigation }) => {
           paddingVertical: 20,
           flexDirection: "row",
           justifyContent: "space-between",
+          alignItems: "center",
         }}
       >
-        <Text style={{ fontSize: 18 }}>{msg}</Text>
-        <Text style={{ fontSize: 14 }}>Beacon {id}</Text>
-      </TouchableOpacity>
+        <ScrollView horizontal style={{ width: "75%" }}>
+          <Text
+            style={{
+              margin: 15,
+              fontSize: 18,
+              color: m.msg.startsWith("ack") ? "green" : "black",
+            }}
+          >
+            {m.msg}
+          </Text>
+        </ScrollView>
+        <TouchableOpacity
+          style={{ margin: 2 }}
+          onPress={() => {
+            navigation.navigate("Send", {
+              beacon: `${m.id}`,
+              msg: "Replying to: " + m.msg,
+            });
+          }}
+        >
+          <Text style={{ fontSize: 14 }}>Beacon {m.id}</Text>
+          <Text style={{ fontSize: 12, opacity: 0.5 }}>RSSI: {m.rssi}</Text>
+          <Text style={{ fontSize: 12, opacity: 0.5 }}>SNR: {m.snr}</Text>
+        </TouchableOpacity>
+      </View>
     );
   };
   return (
     <View style={styles.container}>
-      <Text style={styles.head}>Recieved Messages</Text>
+      <Header text="Receive" />
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+        }}
+      >
+        <Text style={styles.head}>Received Messages</Text>
+        <Button
+          color="gray"
+          title="Reload"
+          onPress={async () => {
+            await getBeaconRecv();
+          }}
+        />
+        <Button
+          color="gray"
+          title="Clear"
+          onPress={async () => {
+            await clear();
+            await getBeaconRecv();
+          }}
+        />
+      </View>
       <ScrollView
         style={{ width: "100%" }}
         contentContainerStyle={{ alignItems: "center" }}
@@ -68,9 +109,7 @@ const Recv = ({ navigation }) => {
             <Text>You haven't received any messages yet</Text>
           </View>
         ) : (
-          messages.map((msg, index) => (
-            <Msg key={index} id={msg.id} msg={msg.msg} />
-          ))
+          messages.map((msg, index) => <Msg key={index} m={msg} />)
         )}
       </ScrollView>
     </View>

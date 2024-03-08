@@ -1,0 +1,64 @@
+Chris Estabrook
+- AZ 24/7 ground staton
+
+David Salde
+- satelite ground swe group
+- cpp 500k lines
+setup connections, passing traffic, interence
+movement faciliation to gateway/snoc
+- contorl stystem software
+- Chandler AZ
+
+
+Andrew Morin
+- Tysons VA
+- certy ground side
+- frield terminals
+- integrate trancivers into products
+- everythingon the ground
+
+Mali Vander Leest
+- under David
+- software for satelites
+- new sat features implementation
+- ? process of testing and deploying code
+
+Audrey
+- platfrom and spcace eng
+- attidue and determination 
+
+determination
+
+Dan
+- payload terminals
+- L band, K-band
+- health monitorying trending
+
+Ray
+- satelite operations
+- supporting 24/7 groups
+- making gui tools
+- ? whats used to make the gui
+
+Mike Senzing
+- produced eng
+- sustation and help integrate 
+- supports all products
+- 14 yers
+- tysons va
+
+
+Eddie Ray
+- Systems integration and test team
+- orbit ground, gateway
+coordingayes with dev orgs 
+different labs
+- eng models of satelites
+- gateway lab
+- how long does it take to run a test in the suite
+
+
+Customer Care
+-intrface between iridim and corps
+- value added manufauters
+- eng team that works with chris and eng dept to provide service sice eng work
