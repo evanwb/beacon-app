@@ -51,7 +51,7 @@ const Beacon = ({ navigation }) => {
     //Alert.alert("Beacon Info", res.available);
     setId(`${res.id}`);
     //res.available[res.id] = '1';
-    setAvail(res.available.split("").map((a) => (a === "1" ? 1 : 0)));
+    setAvail(res.available);
   };
   useEffect(() => {
     (async () => {
@@ -183,17 +183,17 @@ const Beacon = ({ navigation }) => {
                   style={{ flexDirection: "row", alignItems: "center" }}
                 >
                   <Ionicons
-                    name={up > 0 ? "wifi" : "wifi-outline"}
+                    name={(up & 0x1) > 0 ? "wifi" : "wifi-outline"}
                     size={20}
-                    color={up > 0 ? "blue" : "black"}
+                    color={(up & 0x1) > 0 ? "blue" : "lightgray"}
                   />
-                  <Text style={{}}>{`Beacon ${idx} is ${
-                    up > 0
-                      ? id === `${idx}`
-                        ? "you"
-                        : `available`
+                  <Text>{`Beacon ${idx} is ${
+                    id === `${idx}`
+                      ? "you"
+                      : (up & 0x1) > 0
+                      ? `available`
                       : "not available"
-                  } `}</Text>
+                  } ${up >> 8 != 0 ? `${up >> 8}dBm` : ""}`}</Text>
                 </View>
               );
             })}

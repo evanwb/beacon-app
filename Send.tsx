@@ -19,16 +19,16 @@ import { requestPermission, Contact, getAll } from "react-native-contacts";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Header from "./Header";
 
-const MAX_MESSAGE_LEN = 200;
+const MAX_MESSAGE_LEN = 150;
 
 const Send = ({ navigation, route }) => {
   const [name, setName] = useState<string>("");
   const [beacon, setBeacon] = useState<string>(route.params?.beacon ?? "");
   const [phone, setPhone] = useState<string>("");
-  const [recipient, setRecipient] = useState<{
+  const [recipient, setRecipient] = useState<string /* {
     name: string;
     number: string;
-  }>();
+  } */>();
   const [recpName, setRecipientName] = useState<string>();
   const [message, setMessage] = useState<string>(route.params?.msg ?? "");
   const [contacts, setContacts] = useState<Contacts.Contact[]>([]);
@@ -56,14 +56,14 @@ const Send = ({ navigation, route }) => {
           )
         );
 
-        setRecipientName(text);
+        setRecipient(text);
         break;
       case 4:
         setBeacon(text);
         //await AsyncStorage.setItem("beacon", text);
         break;
       case 5:
-        setMessage(text);
+        if (text.length <= MAX_MESSAGE_LEN) setMessage(text);
 
         await AsyncStorage.setItem("msg", text);
         break;
@@ -81,7 +81,7 @@ const Send = ({ navigation, route }) => {
   const handleSend = async () => {
     if (message.length > MAX_MESSAGE_LEN) return;
     if (name === "") alert("Please enter your name");
-    else if ((recipient?.number ?? "") === "" && beacon === "")
+    else if (isNaN(parseInt(recipient)) && isNaN(parseInt(beacon)))
       alert("Please enter recipient number or beacon id");
     else if (message === "") alert("Please enter a message to send");
     else if (message.includes(",")) {
@@ -89,7 +89,7 @@ const Send = ({ navigation, route }) => {
       setMessage(message.replace(",", "."));
     } else {
       if (beacon === "") {
-        await sendMessage(name, recipient!.number, message.trim());
+        await sendMessage(name, recipient, message.trim());
       } else await sendToBeacon(name, beacon, message.trim());
     }
   };
@@ -189,7 +189,7 @@ const Send = ({ navigation, route }) => {
                     }}
                     key={idx}
                     onPress={() => {
-                      setRecipient(c);
+                      setRecipient(c.number);
                       setRecipientName(c.name);
                       setShowContacts(false);
                     }}
@@ -263,7 +263,14 @@ const Send = ({ navigation, route }) => {
           onChangeText={(text) => handleInputChange(5, text)}
           onFocus={(e) => setShowContacts(false)}
         />
-        <Text in style={{ textAlign: "left", width: "80%", opacity: "0.5" }}>
+        <Text
+          style={{
+            textAlign: "left",
+            width: "80%",
+            color: "gray",
+            marginTop: -5,
+          }}
+        >
           {MAX_MESSAGE_LEN - message.length} characters left
         </Text>
         <TouchableOpacity onPress={handleSend} style={styles.button}>

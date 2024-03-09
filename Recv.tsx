@@ -22,7 +22,8 @@ const Recv = ({ navigation }) => {
 
   useEffect(() => {
     (async () => {
-      setMessages(await getBeaconRecv());
+      const data = await getBeaconRecv();
+      if (data.length > 0) setMessages(data);
     })();
   }, []);
   const Msg = ({ m }) => {
@@ -48,7 +49,7 @@ const Recv = ({ navigation }) => {
               color: m.msg.startsWith("ack") ? "green" : "black",
             }}
           >
-            {m.msg}
+            {decodeURI(m.msg)}
           </Text>
         </ScrollView>
         <TouchableOpacity
@@ -81,7 +82,8 @@ const Recv = ({ navigation }) => {
           color="gray"
           title="Reload"
           onPress={async () => {
-            await getBeaconRecv();
+            const data = await getBeaconRecv();
+            if (data.length > 0) setMessages(data);
           }}
         />
         <Button
@@ -89,7 +91,7 @@ const Recv = ({ navigation }) => {
           title="Clear"
           onPress={async () => {
             await clear();
-            await getBeaconRecv();
+            setMessages([]);
           }}
         />
       </View>
@@ -109,7 +111,7 @@ const Recv = ({ navigation }) => {
             <Text>You haven't received any messages yet</Text>
           </View>
         ) : (
-          messages.map((msg, index) => <Msg key={index} m={msg} />)
+          messages.map((msg, index) => <Msg key={index} m={msg} />).reverse()
         )}
       </ScrollView>
     </View>

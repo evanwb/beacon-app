@@ -32,8 +32,10 @@ export const sendToBeacon = async (
         "/send?" +
         new URLSearchParams({
           beacon: beacon,
+          from: name,
+          to: "beacon",
           message: message, //`message from ${name}: ${message}`,
-          location: `${latitude ?? 0}|${longitude ?? 0}`,
+          location: `${latitude ?? 0}~${longitude ?? 0}`,
         })
       }`,
       3000
@@ -53,7 +55,7 @@ export const sendMessage = async (
     const { latitude, longitude } = (await Location.getCurrentPositionAsync())
       .coords;
     console.log(
-      `sending ${message} to ${recipient} location: ${latitude},${longitude}`
+      `sending ${message} to ${recipient} location: ${latitude}~${longitude}`
     );
 
     if (recipient.includes("(") || recipient.includes("+"))
@@ -67,7 +69,7 @@ export const sendMessage = async (
           from: name,
           to: recipient,
           message: message,
-          location: `${latitude ?? 0}|${longitude ?? 0}`,
+          location: `${latitude ?? 0}~${longitude ?? 0}`,
         })
       }`,
       3000
@@ -81,7 +83,7 @@ export const sendMessage = async (
 
 export type BeaconInfo = {
   id: number;
-  available: string;
+  available: number[];
   //markers: MarkerInfo[];
 };
 export const getBeaconInfo = async (): Promise<BeaconInfo | null> => {
@@ -89,12 +91,10 @@ export const getBeaconInfo = async (): Promise<BeaconInfo | null> => {
   try {
     const res = await fetchDataWithTimeout(url + "/info", 3000);
     const text = await res.text();
-
     const data = JSON.parse(text).result;
-
     const r: BeaconInfo = {
       id: parseInt(data.id, 10),
-      available: data.a,
+      available: data.a as number[],
     };
     return r;
   } catch (err) {

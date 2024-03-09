@@ -19,10 +19,7 @@
       "bundleIdentifier": "com.iridium.beacon"
     },
     "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      },
+  
       "package": "com.iridium.beacon"
     },
     "web": {
