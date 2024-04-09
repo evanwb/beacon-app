@@ -2,6 +2,10 @@ const url = "http://192.168.4.1";
 import * as Location from "expo-location";
 import { Alert } from "react-native";
 
+export const color = "#ed3024";
+
+export let sentMessages = [];
+
 const fetchDataWithTimeout = (
   url: string,
   timeout: number
@@ -16,12 +20,10 @@ const fetchDataWithTimeout = (
 export const sendToBeacon = async (
   name: string,
   beacon: string,
-  message: string
+  message: string,
+  { latitude, longitude }: { latitude: number; longitude: number }
 ) => {
   try {
-    const { latitude, longitude, accuracy } = (
-      await Location.getCurrentPositionAsync()
-    ).coords;
     console.log(
       `sending ${message} to beacon ${beacon} location: ${latitude},${longitude}`
     );
@@ -84,6 +86,7 @@ export const sendMessage = async (
 export type BeaconInfo = {
   id: number;
   available: number[];
+  battery: string;
   //markers: MarkerInfo[];
 };
 export const getBeaconInfo = async (): Promise<BeaconInfo | null> => {
@@ -95,11 +98,12 @@ export const getBeaconInfo = async (): Promise<BeaconInfo | null> => {
     const r: BeaconInfo = {
       id: parseInt(data.id, 10),
       available: data.a as number[],
+      battery: data.battery,
     };
     return r;
   } catch (err) {
     // Alert.alert(`${err}`, "Make sure you are connected to your beacon");
-    alert(`${err}`);
+    alert(`beacon info ${err}`);
     return null;
   }
 };
@@ -195,6 +199,37 @@ export const clear = async () => {
   }
 };
 
+export const requestID = async () => {
+  try {
+    const res = await fetchDataWithTimeout(url + "/gid?", 3000);
+    alert(
+      "A new ID has been requested. You may need to reconnect to your Beacon"
+    ); //onst data = (await res.json()).result;
+    return "cleared";
+  } catch (err) {
+    Alert.alert(`${err}`, "Make sure you are connected to your beacon");
+    return {
+      result: err,
+    };
+  }
+};
+
+export const updatePass = async (pass) => {
+  try {
+    const res = await fetchDataWithTimeout(
+      url /* + "/pass?pass=" + pass */,
+      3000
+    );
+    alert("Pasword has been updated"); //onst data = (await res.json()).result;
+    return "updated";
+  } catch (err) {
+    Alert.alert(`${err}`, "Make sure you are connected to your beacon");
+    return {
+      result: err,
+    };
+  }
+};
+
 export type MarkerInfo = {
   title: string;
   coord: {
@@ -208,5 +243,6 @@ export type RecvMessageInfo = {
   id: number;
   msg: string;
   snr: number;
+  created: number;
   rssi: number;
 };

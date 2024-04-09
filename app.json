@@ -9,23 +9,33 @@
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#ed3024"
     },
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.iridium.beacon"
+      "bundleIdentifier": "com.iridium.beacon",
+      "userInterfaceStyle": "automatic"
     },
     "android": {
-  
-      "package": "com.iridium.beacon"
+      "package": "com.iridium.beacon",
+      "userInterfaceStyle": "automatic"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/Trap-Black.otf",
+            "./assets/fonts/Trap-Bold.otf"
+          ]
+        }
+      ],
       [
         "expo-contacts",
         {
@@ -37,21 +47,33 @@
         {
           "fineLocationPermission": false
         }
-      ],[
+      ],
+      [
         "expo-location",
         {
           "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location."
         }
-      
-    ],[
-      "expo-build-properties",
-      {
-        "android": {
-          "usesCleartextTraffic": true
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
         }
-      }
-    ]
-
+      ],["expo-dynamic-app-icon",
+      {
+        "red": { 
+          "image": "./assets/icon.png", 
+          "prerendered": true 
+          
+        },
+        "alt": {
+          "image": "./assets/icon2.png",
+          "prerendered": true
+        }
+      }]
+      
     ],
     "extra": {
       "eas": {

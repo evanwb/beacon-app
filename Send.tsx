@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { sendMessage, sendToBeacon } from "./util";
+import { color, sendMessage, sendToBeacon } from "./util";
 import {
   View,
   TextInput,
@@ -23,14 +23,14 @@ const MAX_MESSAGE_LEN = 150;
 
 const Send = ({ navigation, route }) => {
   const [name, setName] = useState<string>("");
-  const [beacon, setBeacon] = useState<string>(route.params?.beacon ?? "");
+  const [beacon, setBeacon] = useState<string>("");
   const [phone, setPhone] = useState<string>("");
   const [recipient, setRecipient] = useState<string /* {
     name: string;
     number: string;
   } */>();
   const [recpName, setRecipientName] = useState<string>();
-  const [message, setMessage] = useState<string>(route.params?.msg ?? "");
+  const [message, setMessage] = useState<string>("");
   const [contacts, setContacts] = useState<Contacts.Contact[]>([]);
   const [filtered, setFilteredContacts] = useState<Contacts.Contact[]>([]);
   const [selected, setSelectedItem] = useState<any>();
@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
   },
   buttonOutline: {
     borderColor: "red",
-    backgroundColor: "red",
+    backgroundColor: color,
     width: "50%",
     paddingVertical: 16,
     borderRadius: 100,

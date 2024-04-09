@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
-import { RecvMessageInfo, clear, getBeaconRecv } from "./util";
+import { RecvMessageInfo, clear, color, getBeaconRecv } from "./util";
 import Header from "./Header";
 
 const Recv = ({ navigation }) => {
@@ -79,7 +79,7 @@ const Recv = ({ navigation }) => {
       >
         <Text style={styles.head}>Received Messages</Text>
         <Button
-          color="gray"
+          color={color}
           title="Reload"
           onPress={async () => {
             const data = await getBeaconRecv();
@@ -87,7 +87,7 @@ const Recv = ({ navigation }) => {
           }}
         />
         <Button
-          color="gray"
+          color={color}
           title="Clear"
           onPress={async () => {
             await clear();
